@@ -21,8 +21,7 @@ from control import *
 import time
 import threading
 
-#qeeqeqeqe
-
+current_milli_time = lambda: int(round(time.time() * 1000))
 
 class KeyWriter(threading.Thread):
 
@@ -48,7 +47,7 @@ class KeyWriter(threading.Thread):
     TKEY = 84
     
     NKEYS = 10
-    MOUSEMAX = 2100
+    MOUSE_UPDATE_PD = 30
     
     keyState = [False]*NKEYS
     prevKeyState = list(keyState)
@@ -57,9 +56,10 @@ class KeyWriter(threading.Thread):
     mouseButtonState = [False, False]
     prevMouseButtonState = list(mouseButtonState)
     
-    mctr = [0,0]
+    t = current_milli_time()
     
     while True:
+      now = current_milli_time()
       (x,z,y) = self.trans
       (p,w,r) = self.rot
       keyState = [
@@ -72,8 +72,6 @@ class KeyWriter(threading.Thread):
       mouseState[0] = float(w) / 100
       mouseState[1] = float(p) / 100
         
-      
-      print mouseState
       for i in xrange(NKEYS):
         if keyState[i] != prevKeyState[i]:
           if keyState[i]:
@@ -81,31 +79,10 @@ class KeyWriter(threading.Thread):
           else:
             KeyUp(keys[i])
                   
-      """
-      if mouseState[0] or mouseState[1]:
-        dx = 0
-        dy = 0
-        if mouseState[0] and mctr[0] > MOUSEMAX - abs(mouseState[0]):
-          dx = 1 if mouseState[0] > 0 else -1
-          mctr[0] = 0
-        else:
-          mctr[0] += 1
-          
-        if mouseState[1] and mctr[1] > MOUSEMAX - abs(mouseState[1]):
-          dy = 1 if mouseState[1] > 0 else -1
-          mctr[1] = 0
-        else:
-          mctr[1] += 1
-          
-        MouseMoveRel(dx, dy)
-      else:
-        mctr[0] = 0
-        mctr[1] = 0
-      """
-      MouseMoveRel(mouseState[0], mouseState[1])
-      
-      prevKeyState = list(keyState)
-      time.sleep(0.01)
+      if now - t > MOUSE_UPDATE_PD:
+        MouseMoveRel(mouseState[0], mouseState[1])
+        prevKeyState = list(keyState)
+        t = now
       
      
   def set_trans(self, trans):
@@ -117,10 +94,8 @@ class KeyWriter(threading.Thread):
   def set_button(self, k, is_pressed):
     if k == K_F6:
       self.keypress[0] = is_pressed
-      print ">", is_pressed, 0
     elif k == K_F7:
       self.keypress[1] = is_pressed
-      print ">", is_pressed, 1
 
 # handleSystemEvent
 def handleSystemEvent(evt):
